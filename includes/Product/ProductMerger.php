@@ -355,4 +355,91 @@ class ProductMerger {
             }
         }
     }
+
+    /**
+     * Group similar products based on title similarity and AI analysis
+     *
+     * @param array $product_ids Array of product IDs to group
+     * @return array Array of product ID groups
+     */
+    public function group_similar_products($product_ids) {
+        $groups = [];
+        $processed = [];
+        
+        foreach ($product_ids as $product_id) {
+            if (in_array($product_id, $processed)) {
+                continue;
+            }
+            
+            $current_group = [$product_id];
+            $processed[] = $product_id;
+            $current_product = wc_get_product($product_id);
+            
+            if (!$current_product || $current_product->get_type() !== 'simple') {
+                continue;
+            }
+            
+            $current_title = $current_product->get_name();
+            
+            // Compare with other products
+            foreach ($product_ids as $compare_id) {
+                if ($compare_id === $product_id || in_array($compare_id, $processed)) {
+                    continue;
+                }
+                
+                $compare_product = wc_get_product($compare_id);
+                if (!$compare_product || $compare_product->get_type() !== 'simple') {
+                    continue;
+                }
+                
+                $compare_title = $compare_product->get_name();
+                
+                // Check title similarity
+                $similarity = $this->calculate_title_similarity($current_title, $compare_title);
+                if ($similarity >= $this->title_similarity_threshold) {
+                    // Check if products share the same category and brand
+                    if ($this->has_same_category([$product_id, $compare_id]) && 
+                        $this->has_same_brand([$product_id, $compare_id])) {
+                        // Use AI to confirm if products are variants
+                        if ($this->ai_confirms_variants($current_product, $compare_product)) {
+                            $current_group[] = $compare_id;
+                            $processed[] = $compare_id;
+                        }
+                    }
+                }
+            }
+            
+            if (count($current_group) > 1) {
+                $groups[] = $current_group;
+            }
+        }
+        
+        return $groups;
+    }
+    
+    /**
+     * Use AI to confirm if products are variants
+     *
+     * @param WC_Product $product1
+     * @param WC_Product $product2
+     * @return bool
+     */
+    private function ai_confirms_variants($product1, $product2) {
+        $prompt = sprintf(
+            "Analyze these two product titles and descriptions to determine if they are variants of the same product:\n\nProduct 1:\nTitle: %s\nDescription: %s\n\nProduct 2:\nTitle: %s\nDescription: %s\n\nAre these products variants of the same item? Answer with true or false.",
+            $product1->get_name(),
+            $product1->get_description(),
+            $product2->get_name(),
+            $product2->get_description()
+        );
+        
+        try {
+            $response = $this->ai_provider->get_completion($prompt);
+            return strtolower(trim($response)) === 'true';
+        } catch (\Exception $e) {
+            error_log('WS2V AI Error: ' . $e->getMessage());
+            // If AI fails, fall back to title similarity only
+            return true;
+        }
+    }
 }

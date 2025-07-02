@@ -48,36 +48,50 @@ class BackgroundProcessor {
                 return;
             }
 
-            // Validate products can be merged
-            $can_merge = $merger->can_merge_products($product_ids);
-            if (is_wp_error($can_merge)) {
-                $this->log_error($can_merge->get_error_message());
-                $stats['failed']++;
-                update_option('ws2v_stats', $stats);
-                return;
+            // Group products by similarity
+            $similar_groups = $merger->group_similar_products($product_ids);
+            
+            foreach ($similar_groups as $group) {
+                if (count($group) < 2) {
+                    continue; // Skip groups with single products
+                }
+                
+                $result = $merger->merge_products($group);
+                if (!is_wp_error($result)) {
+                    $stats['created']++;
+                } else {
+                    $stats['failed']++;
+                }
+                $stats['processed'] += count($group);
             }
 
-            // Create variable product
-            $variable_product_id = $merger->create_variable_product($product_ids);
-            if (is_wp_error($variable_product_id)) {
-                $this->log_error($variable_product_id->get_error_message());
-                $stats['failed']++;
-                update_option('ws2v_stats', $stats);
-                return;
+            // Group products by similarity
+            $similar_groups = $merger->group_similar_products($product_ids);
+            
+            foreach ($similar_groups as $group) {
+                if (count($group) < 2) {
+                    continue; // Skip groups with single products
+                }
+                
+                $result = $merger->create_variable_product($group);
+                if (!is_wp_error($result)) {
+                    $stats['created']++;
+                    $stats['processed'] += count($group);
+                    
+                    // Log success
+                    $this->log_message(sprintf(
+                        __('Successfully created variable product #%d from %d products', 'woo-single2variable'),
+                        $result,
+                        count($group)
+                    ));
+                } else {
+                    $stats['failed']++;
+                    $this->log_error($result->get_error_message());
+                }
             }
-
-            // Update stats
-            $stats['processed'] += count($product_ids);
-            $stats['created']++;
+            
             update_option('ws2v_stats', $stats);
-
-            // Log success
-            $this->log_message(sprintf(
-                __('Successfully created variable product #%d from %d products', 'woo-single2variable'),
-                $variable_product_id,
-                count($product_ids)
-            ));
-
+            
         } catch (\Exception $e) {
             $this->log_error($e->getMessage());
             $stats['failed']++;
@@ -92,21 +106,33 @@ class BackgroundProcessor {
      * @return array
      */
     private function group_products_by_category($product_ids) {
-        $grouped = [];
+        $grouped_products = [];
         
         foreach ($product_ids as $product_id) {
-            $categories = wp_get_post_terms($product_id, 'product_cat', ['fields' => 'ids']);
-            
-            if (!empty($categories)) {
-                $category_id = $categories[0]; // Use first category
-                if (!isset($grouped[$category_id])) {
-                    $grouped[$category_id] = [];
-                }
-                $grouped[$category_id][] = $product_id;
+            $product = wc_get_product($product_id);
+            if (!$product) {
+                continue;
             }
+            
+            $categories = $product->get_category_ids();
+            if (empty($categories)) {
+                // Products without categories go into a special group
+                if (!isset($grouped_products['uncategorized'])) {
+                    $grouped_products['uncategorized'] = [];
+                }
+                $grouped_products['uncategorized'][] = $product_id;
+                continue;
+            }
+            
+            // Group by the first category (main category)
+            $main_category = $categories[0];
+            if (!isset($grouped_products[$main_category])) {
+                $grouped_products[$main_category] = [];
+            }
+            $grouped_products[$main_category][] = $product_id;
         }
         
-        return $grouped;
+        return $grouped_products;
     }
 
     /**

@@ -24,6 +24,12 @@ class Plugin {
 
         // Add custom cron schedule
         add_filter('cron_schedules', [$this, 'add_cron_interval']);
+        
+        // Schedule automatic product processing
+        if (!wp_next_scheduled('ws2v_auto_process_products')) {
+            wp_schedule_event(time(), 'hourly', 'ws2v_auto_process_products');
+        }
+        add_action('ws2v_auto_process_products', [$this, 'auto_process_products']);
 
         // Initialize admin
         if (is_admin()) {
@@ -98,6 +104,7 @@ class Plugin {
 
         // Clear any scheduled hooks
         wp_clear_scheduled_hook('ws2v_process_queue');
+        wp_clear_scheduled_hook('ws2v_auto_process_products');
     }
 
     /**
@@ -107,11 +114,45 @@ class Plugin {
      * @return array
      */
     public function add_cron_interval($schedules) {
-        $schedules['every_minute'] = [
+        $schedules['every_minute'] = array(
             'interval' => 60,
-            'display' => esc_html__('Every Minute', 'woo-single2variable')
-        ];
+            'display'  => __('Every Minute', 'woo-single2variable')
+        );
+        $schedules['hourly'] = array(
+            'interval' => 3600,
+            'display'  => __('Every Hour', 'woo-single2variable')
+        );
         return $schedules;
+    }
+
+    /**
+     * Auto process products
+     */
+    public function auto_process_products() {
+        // Get all simple products
+        $args = array(
+            'type' => 'simple',
+            'limit' => -1,
+            'status' => 'publish',
+        );
+        
+        $products = wc_get_products($args);
+        if (empty($products)) {
+            return;
+        }
+
+        $product_ids = array_map(function($product) {
+            return $product->get_id();
+        }, $products);
+
+        // Initialize background processor
+        $processor = new \WS2V\Product\BackgroundProcessor();
+        
+        // Set process status to running
+        update_option('ws2v_process_status', 'running');
+        
+        // Process products
+        $processor->process_products($product_ids);
     }
 
     /**
