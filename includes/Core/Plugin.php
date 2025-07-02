@@ -27,9 +27,9 @@ class Plugin {
 
         // Initialize admin
         if (is_admin()) {
-            new Admin\Settings();
-            new Admin\Ajax();
-            new Queue\QueueCleaner();
+            new \WS2V\Admin\Settings();
+            new \WS2V\Admin\Ajax();
+            new \WS2V\Queue\QueueCleaner();
         }
 
         // Initialize frontend
