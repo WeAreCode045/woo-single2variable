@@ -129,15 +129,24 @@ class Plugin {
      * Auto process products
      */
     public function auto_process_products() {
+        // If a manual process is running, skip the automatic run
+        $status = get_option('ws2v_process_status', 'idle');
+        if ($status === 'manual_running') {
+            return;
+        }
+
+        // Set process status to running
+        update_option('ws2v_process_status', 'running');
+
         // Get all simple products
         $args = array(
             'type' => 'simple',
             'limit' => -1,
             'status' => 'publish',
         );
-        
         $products = wc_get_products($args);
         if (empty($products)) {
+            update_option('ws2v_process_status', 'idle');
             return;
         }
 
@@ -145,14 +154,16 @@ class Plugin {
             return $product->get_id();
         }, $products);
 
-        // Initialize background processor
+        // Batch into chunks of 50
+        $batches = array_chunk($product_ids, 50);
+
         $processor = new \WS2V\Product\BackgroundProcessor();
-        
-        // Set process status to running
-        update_option('ws2v_process_status', 'running');
-        
-        // Process products
-        $processor->process_products($product_ids);
+        foreach ($batches as $batch) {
+            $processor->process_single_batch($batch);
+        }
+
+        // Set status to idle when done
+        update_option('ws2v_process_status', 'idle');
     }
 
     /**

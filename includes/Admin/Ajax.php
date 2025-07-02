@@ -27,7 +27,17 @@ class Ajax {
             wp_send_json_error('Insufficient permissions');
         }
 
-        $product_ids = isset($_POST['product_ids']) ? array_map('intval', $_POST['product_ids']) : [];
+        // Get all simple products
+        $args = array(
+            'type' => 'simple',
+            'limit' => -1,
+            'status' => 'publish',
+        );
+        
+        $products = wc_get_products($args);
+        $product_ids = array_map(function($product) {
+            return $product->get_id();
+        }, $products);
         
         if (empty($product_ids)) {
             wp_send_json_error('No products selected');
