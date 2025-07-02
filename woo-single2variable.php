@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: WooCommerce Single to Variable Products
- * Plugin URI: https://wearecode.com/plugins/woo-single2variable
+ * Plugin URI: https://github.com/WeAreCode045/woo-single2variable
  * Description: Generate WooCommerce variable products by merging single products using AI.
  * Version: 1.2.0
- * Author: WeAreCode
- * Author URI: https://wearecode.com
+ * Author: WeAreCode045
+ * Author URI: https://github.com/WeAreCode045
  * Text Domain: woo-single2variable
  * Domain Path: /languages
  * Requires at least: 5.8
