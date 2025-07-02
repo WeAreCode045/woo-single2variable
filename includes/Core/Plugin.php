@@ -33,10 +33,29 @@ class Plugin {
 
         // Initialize admin
         if (is_admin()) {
-            new \WS2V\Admin\Dashboard();
-            new \WS2V\Admin\Settings();
+            $dashboard = new \WS2V\Admin\Dashboard();
+            $settings = new \WS2V\Admin\Settings();
             new \WS2V\Admin\Ajax();
             new \WS2V\Queue\QueueCleaner();
+            add_action('admin_menu', function() use ($dashboard, $settings) {
+                add_menu_page(
+                    __('Single to Variable', 'woo-single2variable'),
+                    __('Single to Variable', 'woo-single2variable'),
+                    'manage_woocommerce',
+                    'woo-single2variable',
+                    [$dashboard, 'render_dashboard'],
+                    'dashicons-randomize',
+                    56
+                );
+                add_submenu_page(
+                    'woo-single2variable',
+                    __('Settings', 'woo-single2variable'),
+                    __('Settings', 'woo-single2variable'),
+                    'manage_woocommerce',
+                    'woo-single2variable-settings',
+                    [$settings, 'render_settings']
+                );
+            }, 5);
         }
 
         // Initialize frontend

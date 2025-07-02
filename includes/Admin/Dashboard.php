@@ -3,30 +3,7 @@ namespace WS2V\Admin;
 
 class Dashboard {
     public function __construct() {
-        add_action('admin_menu', [$this, 'add_admin_menu']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_scripts']);
-    }
-
-    public function add_admin_menu() {
-        // Add Dashboard as the top-level menu
-        add_menu_page(
-            __('Single to Variable', 'woo-single2variable'),
-            __('Single to Variable', 'woo-single2variable'),
-            'manage_woocommerce',
-            'woo-single2variable',
-            [$this, 'render_dashboard'],
-            'dashicons-randomize',
-            56
-        );
-        // Add Settings as a submenu (for compatibility, but Settings.php will also register its own)
-        add_submenu_page(
-            'woo-single2variable',
-            __('Settings', 'woo-single2variable'),
-            __('Settings', 'woo-single2variable'),
-            'manage_woocommerce',
-            'woo-single2variable-settings',
-            null // The Settings class will render this
-        );
     }
 
     /**
