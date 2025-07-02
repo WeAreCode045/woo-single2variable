@@ -8,14 +8,24 @@ class Dashboard {
     }
 
     public function add_admin_menu() {
-        // Only add the dashboard submenu if not already present
-        add_submenu_page(
-            'woo-single2variable',
-            __('Dashboard', 'woo-single2variable'),
-            __('Dashboard', 'woo-single2variable'),
+        // Add Dashboard as the top-level menu
+        add_menu_page(
+            __('Single to Variable', 'woo-single2variable'),
+            __('Single to Variable', 'woo-single2variable'),
             'manage_woocommerce',
             'woo-single2variable',
-            [$this, 'render_dashboard']
+            [$this, 'render_dashboard'],
+            'dashicons-randomize',
+            56
+        );
+        // Add Settings as a submenu (for compatibility, but Settings.php will also register its own)
+        add_submenu_page(
+            'woo-single2variable',
+            __('Settings', 'woo-single2variable'),
+            __('Settings', 'woo-single2variable'),
+            'manage_woocommerce',
+            'woo-single2variable-settings',
+            null // The Settings class will render this
         );
     }
 
