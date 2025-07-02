@@ -33,6 +33,7 @@ class Plugin {
 
         // Initialize admin
         if (is_admin()) {
+            new \WS2V\Admin\Dashboard();
             new \WS2V\Admin\Settings();
             new \WS2V\Admin\Ajax();
             new \WS2V\Queue\QueueCleaner();
