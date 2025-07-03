@@ -14,15 +14,7 @@ class Settings {
      * Add admin menu
      */
     public function add_admin_menu() {
-        add_menu_page(
-            __('Single to Variable', 'woo-single2variable'),
-            __('Single to Variable', 'woo-single2variable'),
-            'manage_woocommerce',
-            'woo-single2variable-settings',
-            [$this, 'render_settings'],
-            'dashicons-randomize',
-            56
-        );
+        // Removed duplicate add_menu_page call. Settings are registered as a submenu in Core/Plugin.php.
     }
 
     /**
