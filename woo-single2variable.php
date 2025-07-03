@@ -61,31 +61,50 @@ if (!function_exists('ws2v_log')) {
     }
 }
 
-// Initialize the plugin
+/**
+ * Initialize the plugin
+ */
 function ws2v_init() {
     ws2v_log('Plugin initialization started');
     
     // Check if WooCommerce is active
     if (!in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_option('active_plugins')))) {
         ws2v_log('WooCommerce is not active');
+        add_action('admin_notices', function() {
+            echo '<div class="error"><p>WooCommerce Single to Variable requires WooCommerce to be installed and active.</p></div>';
+        });
         return;
     }
     
     // Log AJAX context
-    ws2v_log('AJAX context', [
+    $ajax_context = [
         'wp_doing_ajax' => wp_doing_ajax(),
         'is_admin' => is_admin(),
         'DOING_AJAX' => defined('DOING_AJAX') ? DOING_AJAX : 'not defined',
         'REQUEST_URI' => $_SERVER['REQUEST_URI'] ?? 'not set',
         'action' => $_REQUEST['action'] ?? 'not set'
-    ]);
+    ];
+    
+    ws2v_log('AJAX context', $ajax_context);
     
     // Initialize core classes
     try {
         $plugin = new WS2V\Core\Plugin();
+        
+        // Initialize AJAX handlers
+        if (wp_doing_ajax() || is_admin()) {
+            new \WS2V\Admin\Ajax();
+            ws2v_log('AJAX handlers registered in ws2v_init');
+        }
+        
         ws2v_log('Plugin class instantiated successfully');
     } catch (Exception $e) {
         ws2v_log('Error initializing plugin', $e->getMessage());
+        if (is_admin()) {
+            add_action('admin_notices', function() use ($e) {
+                echo '<div class="error"><p>Error initializing WooCommerce Single to Variable: ' . esc_html($e->getMessage()) . '</p></div>';
+            });
+        }
     }
 }
 add_action('plugins_loaded', 'ws2v_init', 1);
@@ -94,10 +113,18 @@ add_action('plugins_loaded', 'ws2v_init', 1);
 add_action('init', function() {
     if (wp_doing_ajax()) {
         ws2v_log('AJAX request detected in init hook');
+        
         // Ensure our AJAX handlers are registered
         if (class_exists('WS2V\\Admin\\Ajax')) {
-            new \WS2V\Admin\Ajax();
-            ws2v_log('AJAX handlers registered in init');
+            try {
+                $ajax = new \WS2V\Admin\Ajax();
+                ws2v_log('AJAX handlers registered in init hook', [
+                    'action' => $_REQUEST['action'] ?? 'none',
+                    'nonce' => !empty($_REQUEST['nonce']) ? 'set' : 'not set'
+                ]);
+            } catch (Exception $e) {
+                ws2v_log('Error initializing AJAX handlers', $e->getMessage());
+            }
         }
     }
 }, 1);

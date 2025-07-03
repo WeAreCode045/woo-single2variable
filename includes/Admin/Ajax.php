@@ -6,6 +6,21 @@ class Ajax {
      * @var string Current process status
      */
     private $status = 'idle';
+    
+    /**
+     * Check AJAX referer and permissions for non-logged-in users
+     */
+    public function check_ajax_referer_and_permissions() {
+        error_log('WS2V: check_ajax_referer_and_permissions called');
+        
+        if (!check_ajax_referer('ws2v_ajax_nonce', 'nonce', false)) {
+            error_log('WS2V: Nonce verification failed in check_ajax_referer_and_permissions');
+            wp_send_json_error('Invalid nonce', 403);
+        }
+        
+        // For non-logged-in users, we can add additional checks here if needed
+        wp_send_json_error('Authentication required', 401);
+    }
 
     /**
      * Constructor
@@ -13,10 +28,18 @@ class Ajax {
     public function __construct() {
         error_log('WS2V: Ajax class instantiated');
         
-        add_action('wp_ajax_ws2v_start_process', [$this, 'start_process']);
-        add_action('wp_ajax_ws2v_stop_process', [$this, 'stop_process']);
-        add_action('wp_ajax_ws2v_get_status', [$this, 'get_status']);
-        add_action('wp_ajax_ws2v_get_products', [$this, 'get_products']);
+        // Register AJAX handlers for both logged-in and non-logged-in users
+        $actions = [
+            'ws2v_start_process',
+            'ws2v_stop_process',
+            'ws2v_get_status',
+            'ws2v_get_products'
+        ];
+        
+        foreach ($actions as $action) {
+            add_action('wp_ajax_' . $action, [$this, str_replace('ws2v_', '', $action)]);
+            add_action('wp_ajax_nopriv_' . $action, [$this, 'check_ajax_referer_and_permissions']);
+        }
         
         error_log('WS2V: AJAX actions registered: ' . print_r([
             'ws2v_start_process' => has_action('wp_ajax_ws2v_start_process'),
@@ -141,30 +164,45 @@ class Ajax {
     }
 
     public function get_status() {
-        check_ajax_referer('ws2v_ajax_nonce', 'nonce');
-
-        if (!current_user_can('manage_woocommerce')) {
-            wp_send_json_error('Insufficient permissions');
+        error_log('WS2V: get_status called');
+        
+        if (!check_ajax_referer('ws2v_ajax_nonce', 'nonce', false)) {
+            error_log('WS2V: Nonce verification failed in get_status');
+            wp_send_json_error('Invalid nonce', 403);
         }
 
-        $queue_manager = new \WS2V\Queue\QueueManager();
-        $queue_stats = $queue_manager->get_queue_stats();
-        
-        $status = get_option('ws2v_process_status', 'idle');
-        $stats = get_option('ws2v_stats', [
-            'processed' => 0,
-            'created' => 0,
-            'failed' => 0
-        ]);
-        
-        $logs = get_option('ws2v_process_logs', []);
+        if (!current_user_can('manage_woocommerce')) {
+            error_log('WS2V: User does not have required capabilities in get_status');
+            wp_send_json_error('Insufficient permissions', 403);
+        }
 
-        wp_send_json_success([
-            'status' => $status,
-            'stats' => $stats,
-            'queue' => $queue_stats,
-            'logs' => array_slice($logs, -50) // Get last 50 log entries
-        ]);
+        try {
+            error_log('WS2V: Getting queue stats');
+            $queue_manager = new \WS2V\Queue\QueueManager();
+            $queue_stats = $queue_manager->get_queue_stats();
+            
+            $status = get_option('ws2v_process_status', 'idle');
+            $stats = get_option('ws2v_stats', [
+                'processed' => 0,
+                'created' => 0,
+                'failed' => 0
+            ]);
+            
+            $logs = get_option('ws2v_process_logs', []);
+            
+            error_log('WS2V: Sending success response');
+            
+            wp_send_json_success([
+                'status' => $status,
+                'stats' => $stats,
+                'queue' => $queue_stats,
+                'logs' => array_slice($logs, -50) // Get last 50 log entries
+            ]);
+            
+        } catch (\Exception $e) {
+            error_log('WS2V: Error in get_status: ' . $e->getMessage());
+            wp_send_json_error('Internal server error: ' . $e->getMessage(), 500);
+        }
     }
 
     /**
