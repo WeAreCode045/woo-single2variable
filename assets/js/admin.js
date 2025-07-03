@@ -8,7 +8,7 @@ jQuery(document).ready(function ($) {
     if ($('#ws2v-product-selector').length) {
         $('#ws2v-product-selector').select2({
             ajax: {
-                url: ajaxurl,
+                url: ws2v_ajax.ajax_url,
                 dataType: 'json',
                 delay: 250,
                 data: function (params) {
@@ -42,7 +42,7 @@ jQuery(document).ready(function ($) {
         // }
 
         $.ajax({
-            url: ajaxurl,
+            url: ws2v_ajax.ajax_url,
             type: 'POST',
             data: {
                 action: 'ws2v_start_process',
@@ -68,7 +68,7 @@ jQuery(document).ready(function ($) {
     // Stop processing
     $('#ws2v-stop-process').on('click', function () {
         $.ajax({
-            url: ajaxurl,
+            url: ws2v_ajax.ajax_url,
             type: 'POST',
             data: {
                 action: 'ws2v_stop_process',

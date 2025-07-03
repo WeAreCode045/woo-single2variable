@@ -13,12 +13,27 @@ class Dashboard {
         if (!in_array($hook, ['toplevel_page_woo-single2variable', 'single-to-variable_page_woo-single2variable'])) {
             return;
         }
-        wp_enqueue_style('select2', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css');
-        wp_enqueue_script('select2', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js', ['jquery']);
-        wp_enqueue_style('ws2v-admin', WS2V_PLUGIN_URL . 'assets/css/admin.css');
-wp_enqueue_script ('ws2v-admin-js', WS2V_PLUGIN_URL . 'assets/js/admin.js');
+        // Enqueue styles
+        wp_enqueue_style('select2', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css', [], '4.1.0-rc.0');
+        wp_enqueue_style('ws2v-admin', WS2V_PLUGIN_URL . 'assets/css/admin.css', [], WS2V_VERSION);
+        
+        // Enqueue scripts with proper dependencies
+        wp_enqueue_script('select2', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js', ['jquery'], '4.1.0-rc.0', true);
+        
+        // Enqueue main admin script
+        wp_enqueue_script(
+            'ws2v-admin-js', 
+            WS2V_PLUGIN_URL . 'assets/js/admin.js', 
+            ['jquery', 'select2'], 
+            WS2V_VERSION, 
+            true
+        );
+        
+        // Localize the script with data
         wp_localize_script('ws2v-admin-js', 'ws2v_ajax', [
-            'nonce' => wp_create_nonce('ws2v_ajax_nonce')
+            'nonce' => wp_create_nonce('ws2v_ajax_nonce'),
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'product_placeholder' => __('Search for products...', 'woo-single2variable')
         ]);
     }
 
