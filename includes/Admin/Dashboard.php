@@ -26,11 +26,11 @@ class Dashboard {
         ?>
         <div class="wrap">
             <h1><?php echo esc_html__('Single to Variable Dashboard', 'woo-single2variable'); ?></h1>        
-        <!-- Add explanation instead of product selection -->
-        <div class="notice notice-info">
-            <p><?php echo esc_html__('This process will automatically analyze and merge all simple products in your store based on AI-powered similarity analysis. Products will be grouped by category, brand, and title similarity.', 'woo-single2variable'); ?></p>
-        </div>
-        
+	        <!-- Add explanation instead of product selection -->
+	        <div class="notice notice-info">
+	            <p><?php echo esc_html__('This process will automatically analyze and merge all simple products in your store based on AI-powered similarity analysis. Products will be grouped by category, brand, and title similarity.', 'woo-single2variable'); ?></p>
+	        </div>
+	        
             <div class="ws2v-stats-container">
                 <div class="ws2v-stat-box">
                     <h3><?php echo esc_html__('Processed Products', 'woo-single2variable'); ?></h3>

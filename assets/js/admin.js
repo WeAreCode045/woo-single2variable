@@ -1,4 +1,4 @@
-jQuery(document).ready(function($) {
+jQuery(document).ready(function ($) {
     let statusInterval;
     const processStatus = {
         running: false
@@ -11,14 +11,14 @@ jQuery(document).ready(function($) {
                 url: ajaxurl,
                 dataType: 'json',
                 delay: 250,
-                data: function(params) {
+                data: function (params) {
                     return {
                         q: params.term,
                         action: 'ws2v_get_products',
                         nonce: ws2v_ajax.nonce
                     };
                 },
-                processResults: function(data) {
+                processResults: function (data) {
                     return {
                         results: data.data
                     };
@@ -33,13 +33,13 @@ jQuery(document).ready(function($) {
     }
 
     // Start processing
-    $('#ws2v-start-process').on('click', function() {
-        const productIds = $('#ws2v-product-select').val();
-        
-        if (!productIds || productIds.length < 2) {
-            alert('Please select at least 2 products to merge');
-            return;
-        }
+    $('#ws2v-start-process').on('click', function () {
+        // Removed product selection validation as backend processes all products automatically
+        // const productIds = $('#ws2v-product-select').val();
+        // if (!productIds || productIds.length < 2) {
+        //     alert('Please select at least 2 products to merge');
+        //     return;
+        // }
 
         $.ajax({
             url: ajaxurl,
@@ -47,9 +47,10 @@ jQuery(document).ready(function($) {
             data: {
                 action: 'ws2v_start_process',
                 nonce: ws2v_ajax.nonce,
-                product_ids: productIds
+                // No product_ids sent as backend processes all
+                // product_ids: productIds 
             },
-            success: function(response) {
+            success: function (response) {
                 if (response.success) {
                     processStatus.running = true;
                     updateUI();
@@ -58,14 +59,14 @@ jQuery(document).ready(function($) {
                     alert('Failed to start processing: ' + response.data);
                 }
             },
-            error: function() {
+            error: function () {
                 alert('Failed to start processing. Please try again.');
             }
         });
     });
 
     // Stop processing
-    $('#ws2v-stop-process').on('click', function() {
+    $('#ws2v-stop-process').on('click', function () {
         $.ajax({
             url: ajaxurl,
             type: 'POST',
@@ -73,7 +74,7 @@ jQuery(document).ready(function($) {
                 action: 'ws2v_stop_process',
                 nonce: ws2v_ajax.nonce
             },
-            success: function(response) {
+            success: function (response) {
                 if (response.success) {
                     processStatus.running = false;
                     updateUI();
@@ -117,14 +118,14 @@ jQuery(document).ready(function($) {
                 action: 'ws2v_get_status',
                 nonce: ws2v_ajax.nonce
             },
-            success: function(response) {
+            success: function (response) {
                 if (response.success) {
                     updateStats(response.data.stats, response.data.queue);
                     updateLogs(response.data.logs);
-                    
+
                     // Check if processing is complete
                     const queue = response.data.queue;
-                    if (response.data.status !== 'running' || 
+                    if (response.data.status !== 'running' ||
                         (queue.pending === 0 && queue.processing === 0)) {
                         processStatus.running = false;
                         updateUI();
@@ -160,8 +161,8 @@ jQuery(document).ready(function($) {
     function updateLogs(logs) {
         const logContainer = $('#ws2v-log');
         logContainer.empty();
-        
-        logs.forEach(function(log) {
+
+        logs.forEach(function (log) {
             const logEntry = $('<div>').addClass('ws2v-log-entry');
             if (log.type === 'error') {
                 logEntry.addClass('ws2v-log-error');
@@ -169,14 +170,14 @@ jQuery(document).ready(function($) {
             logEntry.text(`[${log.time}] ${log.message}`);
             logContainer.append(logEntry);
         });
-        
+
         // Auto-scroll to bottom
         logContainer.scrollTop(logContainer[0].scrollHeight);
     }
 
     // Initial UI update
     updateUI();
-    
+
     // Check initial status
     checkStatus();
 });
