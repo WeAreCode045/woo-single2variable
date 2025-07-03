@@ -16,11 +16,7 @@ class Dashboard {
         wp_enqueue_style('select2', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css');
         wp_enqueue_script('select2', 'https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js', ['jquery']);
         wp_enqueue_style('ws2v-admin', WS2V_PLUGIN_URL . 'assets/css/admin.css');
-wp_enqueue_script(
-    'ws2v-admin-js',
-    plugins_url('assets/js/admin.js', __FILE__),
-    ['jquery']
-);
+wp_enqueue_script ('ws2v-admin-js', WS2V_PLUGIN_URL . 'assets/js/admin.js');
         wp_localize_script('ws2v-admin', 'ws2v_ajax', [
             'nonce' => wp_create_nonce('ws2v_ajax_nonce')
         ]);
