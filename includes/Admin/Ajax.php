@@ -11,21 +11,38 @@ class Ajax {
      * Constructor
      */
     public function __construct() {
+        error_log('WS2V: Ajax class instantiated');
+        
         add_action('wp_ajax_ws2v_start_process', [$this, 'start_process']);
         add_action('wp_ajax_ws2v_stop_process', [$this, 'stop_process']);
         add_action('wp_ajax_ws2v_get_status', [$this, 'get_status']);
         add_action('wp_ajax_ws2v_get_products', [$this, 'get_products']);
+        
+        error_log('WS2V: AJAX actions registered: ' . print_r([
+            'ws2v_start_process' => has_action('wp_ajax_ws2v_start_process'),
+            'ws2v_stop_process' => has_action('wp_ajax_ws2v_stop_process'),
+            'ws2v_get_status' => has_action('wp_ajax_ws2v_get_status'),
+            'ws2v_get_products' => has_action('wp_ajax_ws2v_get_products')
+        ], true));
     }
 
     /**
      * Start the product merging process
      */
     public function start_process() {
-        check_ajax_referer('ws2v_ajax_nonce', 'nonce');
+        error_log('WS2V: start_process called');
+        
+        if (!check_ajax_referer('ws2v_ajax_nonce', 'nonce', false)) {
+            error_log('WS2V: Nonce verification failed');
+            wp_send_json_error('Invalid nonce');
+        }
 
         if (!current_user_can('manage_woocommerce')) {
+            error_log('WS2V: User does not have required capabilities');
             wp_send_json_error('Insufficient permissions');
         }
+        
+        error_log('WS2V: User authorized, proceeding with process');
 
         // Get all simple products
         $args = array(

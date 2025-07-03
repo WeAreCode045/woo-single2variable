@@ -31,8 +31,8 @@ class Plugin {
         }
         add_action('ws2v_auto_process_products', [$this, 'auto_process_products']);
 
-        // Initialize admin
-        if (is_admin()) {
+        // Initialize admin and AJAX functionality
+        if (is_admin() || wp_doing_ajax()) {
             $dashboard = new \WS2V\Admin\Dashboard();
             $settings = new \WS2V\Admin\Settings();
             new \WS2V\Admin\Ajax();
