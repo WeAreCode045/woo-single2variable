@@ -3,7 +3,7 @@
  * Plugin Name: WooCommerce Single to Variable Products
  * Plugin URI: https://github.com/WeAreCode045/woo-single2variable
  * Description: Generate WooCommerce variable products by merging single products using AI.
- * Version: 1.3.0
+ * Version: 1.3.2
  * Author: WeAreCode045
  * Author URI: https://github.com/WeAreCode045
  * Text Domain: woo-single2variable
